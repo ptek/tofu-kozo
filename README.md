@@ -1,19 +1,22 @@
-# tofu-kozo
-# 豆腐小僧
-#### An HTTP-based control scheme for phantom.js
+# tofu-kozo :: 豆腐小僧
+## An HTTP-based control scheme for phantom.js
 
-## Aim
+
+### Aim
 To dynamically control phantom.js through a language-agnostic HTTP interface.
 
-## Requirements
+
+### Requirements
  * Phantom.js 1.5.0
 
-## Development requirements
+### Development requirements
  * Ruby + Bundler
- * Rspec
+ * Rspec 2.9
 
-## License
+
+### License
 BSD (See LICENSE)
 
-## Authors
+
+### Authors
  * [http://github.com/pzel](pzel)
