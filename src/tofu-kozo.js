@@ -18,10 +18,6 @@ var server = require('webserver').create();
 var logfile = "./phantom.log";
 var port = phantom.args[0] || 10530;
 
-var makeResult = function(code, msg) {
-  return JSON.stringify({actionStatus : code, content: msg});
-};
-
 var visitPage = function(jobToken, url) {
   page.open(url, function(status) {
     if (status === "fail") {
@@ -59,6 +55,8 @@ var startServer = function() {
 };
 
 var loadDeps = function() {
+  phantom.injectJs("log.js");
+  phantom.injectJs("result.js");
   phantom.libraryPath = phantom.libraryPath+"/lib";
   phantom.injectJs("_.js");
 }
@@ -72,28 +70,6 @@ var prepareDir = function(port){
     phantom.exit();
     return false;
   }
-};
-
-var resultDir = function(){
-  return "/tmp/tofu-kozo/"+port+"/";
-};
-
-var resultFile = function(jobToken) {
-  return resultDir()+jobToken;
-};
-
-var touchResultFile = function(jobToken) {
-  return fs.touch(resultFile(jobToken));
-};
-
-var writeResult = function(jobToken, resultString) {
-  return fs.write(resultFile(jobToken), resultString, "w");
-};
-
-var log = function(x) {
-  var d = (new Date()).toISOString();
-  var msg = JSON.stringify(x, null, 4);
-  fs.write(logfile, (d + " : " + msg + "\n"), "a");
 };
 
 var uuid = function() {
