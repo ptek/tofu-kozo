@@ -18,28 +18,16 @@ var server = require('webserver').create();
 var logfile = "./phantom.log";
 var port = phantom.args[0] || 10530;
 
-var Code = {
-  err : 1,
-  quit : 2,
-  ok : 3
-};
-
 var makeResult = function(code, msg) {
-  switch (code) {
-  case Code.err : {return JSON.stringify({actionStatus : "error", content: msg});}
-  case Code.ok : {return JSON.stringify({actionStatus : "ok", content : msg});}
-  case Code.quit : {return false;}
-    // The default case should not come up.
-  default: return JSON.stringify({actionStatus : "Tofu-kozo internal error"}); 
-  }
+  return JSON.stringify({actionStatus : code, content: msg});
 };
 
 var visitPage = function(jobToken, url) {
   page.open(url, function(status) {
     if (status === "fail") {
-      return writeResult(jobToken, makeResult(Code.err,"Could not open page: "+url));
+      return writeResult(jobToken, makeResult("error","Could not open page: "+url));
     } else if (status === "success") {
-      return writeResult(jobToken, makeResult(Code.ok, page.content));
+      return writeResult(jobToken, makeResult("ok", page.content));
     }
   });
 };
@@ -52,7 +40,7 @@ var takeAction = function(jobToken, url) {
     var target = decodeURIComponent(url.split("=")[1]);
     return visitPage(jobToken, target);
   } else {
-    return writeResult(jobToken, makeResult(Code.ok));
+    return writeResult(jobToken, makeResult("ok"));
   }
 };
 
@@ -77,7 +65,7 @@ var loadDeps = function() {
 
 var prepareDir = function(port){
   if (fs.isWritable("/tmp")){
-    fs.makeTree(resultDir());
+    fs.makeTree(resultDir()); 
     return true;
   }
   else {
