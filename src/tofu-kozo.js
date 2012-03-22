@@ -5,7 +5,6 @@
  Underscore.js licensed under the MIT license (see ./lib/_.js)
  
  * Action API: *
- 
  URL                                   ACTION                 
  =========                             ==========             
  '/quit'                               Shut down phantom.js   
@@ -13,50 +12,61 @@
  
 */
 
-
 var fs = require('fs');
+var page = require('webpage').create();
 var server = require('webserver').create();
 var logfile = "./phantom.log";
 var port = phantom.args[0] || 10530;
 
 var Code = {
-  err : 254,
-  quit : 253,
-  ok : 250
-}
-
-var log = function(x) {
-  var d = (new Date()).toISOString();
-  var msg = JSON.stringify(x, null, 4);
-  fs.write(logfile, (d + " : " + msg + "\n"), "a");
+  err : 1,
+  quit : 2,
+  ok : 3
 };
 
 var makeResult = function(code, msg) {
   switch (code) {
-  case Code.err : {
-    return [code, {actionStatus : "error",
-                   message: msg}];
-  }
-  case Code.ok : {
-    return [code, {actionStatus : "ok"}];
-  }
-  case Code.quit : {
-    return [code, {actionStatus : "quit"}];
-  }
-  default:
-    return [code, {actionStatus : "unknown -- bug creator"}];
+  case Code.err : {return JSON.stringify({actionStatus : "error", content: msg});}
+  case Code.ok : {return JSON.stringify({actionStatus : "ok", content : msg});}
+  case Code.quit : {return false;}
+    // The default case should not come up.
+  default: return JSON.stringify({actionStatus : "Tofu-kozo internal error"}); 
   }
 };
 
-var parseUrl = function(url) {
+var visitPage = function(jobToken, url) {
+  page.open(url, function(status) {
+    if (status === "fail") {
+      return writeResult(jobToken, makeResult(Code.err,"Could not open page: "+url));
+    } else if (status === "success") {
+      return writeResult(jobToken, makeResult(Code.ok, page.content));
+    }
+  });
+};
+
+var takeAction = function(jobToken, url) {
   if (/^\/quit$/.test(url)) {
     phantom.exit();
-    return makeResult(Code.quit);
+    return false;
   } else if (/^\/visit\?url=(.*)/.test(url)) {
     var target = decodeURIComponent(url.split("=")[1]);
-    return makeResult(Code.err,"Could not open page: "+target);
+    return visitPage(jobToken, target);
   } else {
-    return makeResult(Code.ok);
+    return writeResult(jobToken, makeResult(Code.ok));
+  }
+};
+
+var startServer = function() {
+  var listening = server.listen(port, function(req, resp){
+    var jobToken = uuid();
+    // Send the token to the client and the rest is callbacks
+    resp.write(jobToken); 
+    touchResultFile(jobToken);
+    return takeAction(jobToken, req.url);
+  });
+  if (!listening) {
+    console.log("Cannon open web server on port " + port);
+    phantom.exit();
   }
 };
 
@@ -65,18 +75,51 @@ var loadDeps = function() {
   phantom.injectJs("_.js");
 }
 
-var startServer = function() {
-  var listening = server.listen(port, function(req, resp){
-    var parseResult = parseUrl(req.url);
-    resp.statusCode = parseResult[0];
-    resp.write(JSON.stringify(parseResult[1]));
-  });
-
-  if (!listening) {
-    console.log("Quitting web server on port " + port);
+var prepareDir = function(port){
+  if (fs.isWritable("/tmp")){
+    fs.makeTree(resultDir());
+    return true;
+  }
+  else {
     phantom.exit();
+    return false;
   }
 };
 
+var resultDir = function(){
+  return "/tmp/tofu-kozo/"+port+"/";
+};
+
+var resultFile = function(jobToken) {
+  return resultDir()+jobToken;
+};
+
+var touchResultFile = function(jobToken) {
+  return fs.touch(resultFile(jobToken));
+};
+
+var writeResult = function(jobToken, resultString) {
+  return fs.write(resultFile(jobToken), resultString, "w");
+};
+
+var log = function(x) {
+  var d = (new Date()).toISOString();
+  var msg = JSON.stringify(x, null, 4);
+  fs.write(logfile, (d + " : " + msg + "\n"), "a");
+};
+
+var uuid = function() {
+  var uuid = "", i, random;
+  for (i = 0; i < 32; i++) {
+    random = Math.random() * 16 | 0;
+    if (i == 8 || i == 12 || i == 16 || i == 20) {
+      uuid += "-"
+    }
+    uuid += (i == 12 ? 4 : (i == 16 ? (random & 3 | 8) : random)).toString(16);
+  }
+  return uuid;
+}
+
 loadDeps();
+prepareDir(port);
 startServer();
