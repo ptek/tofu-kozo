@@ -24,7 +24,7 @@ describe "Tofu-kozo error page: " do
   end
 
   def error_message text
-    "<html><body>Your tofu has gone bad:<br><span id='error-message'>#{text}</span></body></html>"
+    %~{\"actionStatus\":\"error\",\"message\":\"#{text}\"}~
   end
 
 end

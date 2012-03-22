@@ -6,19 +6,10 @@
  
  * Action API: *
  
- URL                                   ACTION                  RESPONSE BODY*
- =========                             ==========              ==============
- '/quit'                               Shut down phantom.js    "Quitting.\n"
- '/visit?url=<URL-ENCODED ADDRESS>'    Visit the page          Info
- 
-
- *Info = Information about the action. 
-         It does NOT contain any HTML from the page being viewed by kozo.
-
- * Status codes used by the server *
- 250 = The command was successful
- 253 = The server will shut down now
- 254 = The command was unsuccessful, see response body for details
+ URL                                   ACTION                 
+ =========                             ==========             
+ '/quit'                               Shut down phantom.js   
+ '/visit?url=<URL-ENCODED ADDRESS>'    Visit the page         
  
 */
 
@@ -40,25 +31,21 @@ var log = function(x) {
   fs.write(logfile, (d + " : " + msg + "\n"), "a");
 };
 
-var makeResult = function(code, obj) {
-  var body;
+var makeResult = function(code, msg) {
   switch (code) {
   case Code.err : {
-    body = T.errorPage(obj);
-    break;
+    return [code, {actionStatus : "error",
+                   message: msg}];
   }
   case Code.ok : {
-    body = T.okPage(obj);
-    break;
+    return [code, {actionStatus : "ok"}];
   }
   case Code.quit : {
-    body = T.quitPage();
-    break;
+    return [code, {actionStatus : "quit"}];
   }
-  default: body = "OK";
+  default:
+    return [code, {actionStatus : "unknown -- bug creator"}];
   }
-  return { statusCode : code, 
-           body : body }
 };
 
 var parseUrl = function(url) {
@@ -67,28 +54,22 @@ var parseUrl = function(url) {
     return makeResult(Code.quit);
   } else if (/^\/visit\?url=(.*)/.test(url)) {
     var target = decodeURIComponent(url.split("=")[1]);
-    log(target);
-    return makeResult(Code.err, {message : "Could not open page: "+target});
+    return makeResult(Code.err,"Could not open page: "+target);
   } else {
     return makeResult(Code.ok);
   }
 };
 
 var loadDeps = function() {
-  phantom.injectJs("templates.js");
   phantom.libraryPath = phantom.libraryPath+"/lib";
   phantom.injectJs("_.js");
-  
-  _.templateSettings = {
-    interpolate : /\{\{(.+?)\}\}/g
-  };
 }
 
 var startServer = function() {
   var listening = server.listen(port, function(req, resp){
     var parseResult = parseUrl(req.url);
-    resp.statusCode = parseResult.statusCode;
-    resp.write(parseResult.body);
+    resp.statusCode = parseResult[0];
+    resp.write(JSON.stringify(parseResult[1]));
   });
 
   if (!listening) {
