@@ -28,8 +28,9 @@ describe "Stopping tofu-kozo" do
   end
 
   it "Can be stopped via HTTP call to /quit" do
-    `curl -s http://localhost:#{@kozo_port}/quit`
+    response = `curl -sS http://localhost:#{@kozo_port}/quit`
     sleep 0.5
+    response.should == "Quitting.\n"
     lambda{Process.getpgid(@kozo)}.should raise_error
   end
 
