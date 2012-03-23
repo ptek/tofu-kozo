@@ -2,6 +2,8 @@
  TOFU-KOZO 豆腐小僧 
  An HTTP-based control scheme for phantom.js
  Licensed under the BSD license (see: LICENSE)
+ Copyright 2012 pzel
+
  Underscore.js licensed under the MIT license (see ./src/lib/_.js)
  Sizzle.js licensed under the MIT or BSD license (see ./src/lib/sizzle.js)
 */
@@ -16,8 +18,11 @@ page.onConsoleMessage = function(msg, line, id) {
   log(msg+" (line: "+line+") : "+id); 
 };
 
-loadSizzle = function() {
-  page.injectJs("sizzle.js");
+page.onLoadStarted = function() {
+};
+
+page.onLoadFinished = function() {
+  log("load finished");
 };
 
 var makeParams = function(jobToken, obj){
@@ -25,14 +30,41 @@ var makeParams = function(jobToken, obj){
   return writeInjection(jobToken, injection);
 };
 
+var clickElement = function(jobToken, selector) {
+  var sel = selector.replace(/\+/g," ");
+  page.injectJs("jquery_noConflict.js");
+  page.injectJs(makeParams(jobToken,{selector:sel}));
+  
+  var res = page.evaluate(function(){
+    TofuParams.waiting = true;
+    return jQuery(TofuParams.selector).offset();
+  });
+
+  if (res.length !== 0) {
+    page.sendEvent("click", res.left, res.top);
+    var waiting = true;
+    var old = page.content;
+    return waitForResult(jobToken, old);
+  } else {
+    return writeResult(jobToken, makeResult("error", "Could not find "+sel));
+  }
+};
+
+var waitForResult = function(jobToken, oldPageBody) {
+  if (page.content !== oldPageBody) {
+    return writeResult(jobToken, makeResult("ok", page.content));
+  } else {
+    setTimeout(function(){waitForResult(jobToken, oldPageBody)}, 1000);
+  }
+}
+
 var selectElement = function(jobToken, selector) {
   var sel = selector.replace("+"," ");
-  loadSizzle();
+  page.injectJs("jquery_noConflict.js");
   page.injectJs(makeParams(jobToken,{selector:sel}));
 
   var res = page.evaluate(function(){
-    var s = TofuParams.selector;
-    var elems = Sizzle(s);
+    var elems = jQuery(TofuParams.selector);
     if (elems.length > 0){
       return elems[0].outerHTML;
     }
@@ -57,6 +89,10 @@ var visitPage = function(jobToken, url) {
   });
 };
 
+var unknownCommand = function(jobToken, url) {
+  var s = decodeURIComponent(url);
+  return writeResult(jobToken, makeResult("error", "Could not interpret command: "+s));
+};
 
 var takeAction = function(jobToken, url) {
   if (/^\/quit$/.test(url)) {
@@ -68,8 +104,11 @@ var takeAction = function(jobToken, url) {
   } else if (/^\/select\?sel=(.*)/.test(url)) {
     var target = decodeURIComponent(url.split("=")[1]);
     return selectElement(jobToken, target);
+  } else if (/^\/click\?sel=(.*)/.test(url)) {
+    var target = decodeURIComponent(url.split("=")[1]);
+    return clickElement(jobToken, target);
   } else {
-    return writeResult(jobToken, makeResult("ok"));
+    return unknownCommand(jobToken, url);
   }
 };
 
@@ -117,5 +156,6 @@ var uuid = function() {
 }
 
 loadDeps();
+
 prepareDir(port);
 startServer();

@@ -6,3 +6,4 @@ test:
 clean:
 	@rm -rf /tmp/tofu-kozo
 	@rm -rf ./phantom.log
+	@rm -rf ./webserver.log

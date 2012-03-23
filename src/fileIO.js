@@ -52,5 +52,3 @@ var writeInjection = function(jobToken, string) {
   fs.write(file, string, "w");
   return file;
 };
-      
-

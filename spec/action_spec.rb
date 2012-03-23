@@ -4,7 +4,6 @@ include SpecTools
 
 describe "Tofu-kozo action API " do
 
-
   before :all do
     @kozo_port = 10530
     @kozo = fork { exec "phantomjs ./src/tofu-kozo.js #{@kozo_port}" }
@@ -36,7 +35,7 @@ describe "Tofu-kozo action API " do
         (ok_msg "<div id=\"test1-id\">Test me.</div>")
     end
     
-    it "selects by class and returns the HTML" do
+    it "selects by class and returns the first matching element's HTML" do
       url = "http://localhost:#{@www_port}/selector_test.html"
       sel = ".testClass"
       `curl -s http://localhost:#{@kozo_port}/visit?url=#{e url}`
@@ -54,7 +53,21 @@ describe "Tofu-kozo action API " do
         (ok_msg "<div class=\"testClass\">Second!</div>")
     end
     
-    
   end
+
+  describe "/click?sel=<selector> by link text" do
+
+    it "finds and clicks by link text" do
+      index_body = File.read("./test_files/index.html").strip.to_s
+      url = "http://localhost:#{@www_port}/click_test.html"
+      sel = 'a:contains(back to index)'
+      `curl -s http://localhost:#{@kozo_port}/visit?url=#{e url}`
+      token = `curl -s http://localhost:#{@kozo_port}/click?sel=#{e sel}`
+      (interpret_result (result_file token)).should == 
+        (ok_msg index_body)
+    end
+
+  end
+
 
 end
