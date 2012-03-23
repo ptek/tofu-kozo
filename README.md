@@ -15,6 +15,7 @@ To dynamically control phantom.js through a language-agnostic HTTP interface.
 #### License
 BSD (See [LICENSE](https://github.com/pzel/tofu-kozo/blob/master/LICENSE))
 [Underscore.js](http://documentcloud.github.com/underscore) is used in accordance with the MIT license
+[jQuery](http://jquery.com) is used in accordance with the BSD license.
 
 #### Authors
  * [pzel](https://github.com/pzel)
@@ -24,5 +25,5 @@ BSD (See [LICENSE](https://github.com/pzel/tofu-kozo/blob/master/LICENSE))
  1.  Get page fragments and return the html.
  2.  Click page elements.
  3.  Fill out forms
- 4.  Have a universal error page that is returned when a given operation fails. (in progress)
+
 

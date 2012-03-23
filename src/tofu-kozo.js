@@ -4,8 +4,8 @@
  Licensed under the BSD license (see: LICENSE)
  Copyright 2012 pzel
 
- Underscore.js licensed under the MIT license (see ./src/lib/_.js)
- Sizzle.js licensed under the MIT or BSD license (see ./src/lib/sizzle.js)
+ Includes jQuery, licensed under the BSD license.
+
 */
 
 var fs = require('fs');
@@ -16,13 +16,6 @@ var port = phantom.args[0] || 10530;
 
 page.onConsoleMessage = function(msg, line, id) { 
   log(msg+" (line: "+line+") : "+id); 
-};
-
-page.onLoadStarted = function() {
-};
-
-page.onLoadFinished = function() {
-  log("load finished");
 };
 
 var makeParams = function(jobToken, obj){
@@ -36,7 +29,6 @@ var clickElement = function(jobToken, selector) {
   page.injectJs(makeParams(jobToken,{selector:sel}));
   
   var res = page.evaluate(function(){
-    TofuParams.waiting = true;
     return jQuery(TofuParams.selector).offset();
   });
 
@@ -56,7 +48,7 @@ var waitForResult = function(jobToken, oldPageBody) {
   } else {
     setTimeout(function(){waitForResult(jobToken, oldPageBody)}, 1000);
   }
-}
+};
 
 var selectElement = function(jobToken, selector) {
   var sel = selector.replace("+"," ");
@@ -126,10 +118,8 @@ var startServer = function() {
   }
 };
 
-
 var loadDeps = function() {
   phantom.injectJs("fileIO.js");
-  phantom.injectJs("_.js");
 };
 
 var prepareDir = function(port){
@@ -156,6 +146,5 @@ var uuid = function() {
 }
 
 loadDeps();
-
 prepareDir(port);
 startServer();
