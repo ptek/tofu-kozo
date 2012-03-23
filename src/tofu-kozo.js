@@ -2,14 +2,8 @@
  TOFU-KOZO 豆腐小僧 
  An HTTP-based control scheme for phantom.js
  Licensed under the BSD license (see: LICENSE)
- Underscore.js licensed under the MIT license (see ./lib/_.js)
- 
- * Action API: *
- URL                                   ACTION                 
- =========                             ==========             
- '/quit'                               Shut down phantom.js   
- '/visit?url=<URL-ENCODED ADDRESS>'    Visit the page         
- 
+ Underscore.js licensed under the MIT license (see ./src/lib/_.js)
+ Sizzle.js licensed under the MIT or BSD license (see ./src/lib/sizzle.js)
 */
 
 var fs = require('fs');
@@ -17,6 +11,41 @@ var page = require('webpage').create();
 var server = require('webserver').create();
 var logfile = "./phantom.log";
 var port = phantom.args[0] || 10530;
+
+page.onConsoleMessage = function(msg, line, id) { 
+  log(msg+" (line: "+line+") : "+id); 
+};
+
+loadSizzle = function() {
+  page.injectJs("sizzle.js");
+};
+
+var makeParams = function(jobToken, obj){
+  var injection = ("window.TofuParams = {}; window.TofuParams ="+JSON.stringify(obj)+";");
+  return writeInjection(jobToken, injection);
+};
+
+var selectElement = function(jobToken, selector) {
+  var sel = selector.replace("+"," ");
+  loadSizzle();
+  page.injectJs(makeParams(jobToken,{selector:sel}));
+
+  var res = page.evaluate(function(){
+    var s = TofuParams.selector;
+    var elems = Sizzle(s);
+    if (elems.length > 0){
+      return elems[0].outerHTML;
+    }
+    else
+      return false;
+  });
+
+  if (typeof res === "string" && res.length !== 0) {
+    return writeResult(jobToken, makeResult("ok", res));
+  } else {
+    return writeResult(jobToken, makeResult("error", "Could not find "+sel));
+  }
+};
 
 var visitPage = function(jobToken, url) {
   page.open(url, function(status) {
@@ -28,6 +57,7 @@ var visitPage = function(jobToken, url) {
   });
 };
 
+
 var takeAction = function(jobToken, url) {
   if (/^\/quit$/.test(url)) {
     phantom.exit();
@@ -35,6 +65,9 @@ var takeAction = function(jobToken, url) {
   } else if (/^\/visit\?url=(.*)/.test(url)) {
     var target = decodeURIComponent(url.split("=")[1]);
     return visitPage(jobToken, target);
+  } else if (/^\/select\?sel=(.*)/.test(url)) {
+    var target = decodeURIComponent(url.split("=")[1]);
+    return selectElement(jobToken, target);
   } else {
     return writeResult(jobToken, makeResult("ok"));
   }
@@ -54,12 +87,11 @@ var startServer = function() {
   }
 };
 
+
 var loadDeps = function() {
-  phantom.injectJs("log.js");
-  phantom.injectJs("result.js");
-  phantom.libraryPath = phantom.libraryPath+"/lib";
+  phantom.injectJs("fileIO.js");
   phantom.injectJs("_.js");
-}
+};
 
 var prepareDir = function(port){
   if (fs.isWritable("/tmp")){

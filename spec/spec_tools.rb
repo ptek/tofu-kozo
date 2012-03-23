@@ -38,7 +38,12 @@ module SpecTools
     end
 
     dirty = JSON.parse s
-    clean_content = dirty["content"].gsub("\n","")
+    
+    if dirty["content"]
+      clean_content = dirty["content"].gsub("\n","")
+    else
+      clean_content = ""
+    end
     
     { 
       "actionStatus" => dirty["actionStatus"],
