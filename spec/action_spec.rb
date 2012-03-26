@@ -29,7 +29,7 @@ describe "Tofu-kozo action API " do
     it "selects by id and returns the HTML" do
       url = "http://localhost:#{@www_port}/selector_test.html"
       sel = "#test1-id"
-      `curl -s http://localhost:#{@kozo_port}/visit?url=#{e url}`
+      interpret_result(result_file `curl -s http://localhost:#{@kozo_port}/visit?url=#{e url}`)
       token = `curl -s http://localhost:#{@kozo_port}/select?sel=#{e sel}`
       (interpret_result (result_file token)).should == 
         (ok_msg "<div id=\"test1-id\">Test me.</div>")
@@ -47,7 +47,7 @@ describe "Tofu-kozo action API " do
     it "supports the :eq pseudoselector" do
       url = "http://localhost:#{@www_port}/selector_test.html"
       sel = ".testClass:eq(1)"
-      `curl -s http://localhost:#{@kozo_port}/visit?url=#{e url}`
+      interpret_result(result_file `curl -s http://localhost:#{@kozo_port}/visit?url=#{e url}`)
       token = `curl -s http://localhost:#{@kozo_port}/select?sel=#{e sel}`
       (interpret_result (result_file token)).should == 
         (ok_msg "<div class=\"testClass\">Second!</div>")
