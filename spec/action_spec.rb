@@ -10,7 +10,7 @@ describe "Tofu-kozo action API " do
     @www_server = fork { run_server }
     @www_port = 9292 # Can this be parametrized?
     [@kozo, @www_server].each { |pid| Process.detach pid }
-    sleep 0.7
+    sleep 2
   end
   
   after :all do 

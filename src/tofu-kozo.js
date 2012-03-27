@@ -88,8 +88,7 @@ var unknownCommand = function(jobToken, url) {
 
 var takeAction = function(jobToken, url) {
   if (/^\/quit$/.test(url)) {
-    phantom.exit();
-    return false;
+    return setTimeout(phantom.exit, 1);
   } else if (/^\/visit\?url=(.*)/.test(url)) {
     var target = decodeURIComponent(url.split("=")[1]);
     return visitPage(jobToken, target);

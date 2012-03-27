@@ -7,7 +7,8 @@ module SpecTools
   def run_server
     $stdout.reopen("/dev/null", "a")
     $stderr.reopen("/dev/null", "a")
-    (Dir.chdir "./test_files") && (Asdf::Server.start) 
+    Dir.chdir "./test_files"
+    Asdf::Server.start
   end
 
   def e url

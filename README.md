@@ -11,7 +11,7 @@ To dynamically control phantom.js through a language-agnostic HTTP interface.
  * Phantom.js 1.5.0
 
 #### Development requirements
-
+ * curl
  * Ruby + Bundler
  * Rspec 2.9
 
