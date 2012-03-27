@@ -11,6 +11,10 @@ module SpecTools
     Asdf::Server.start
   end
 
+  def inner_html string
+    string.gsub(/^<html>/,"").gsub(/<\/html>/,"")
+  end
+
   def e url
     CGI.escape url
   end
@@ -23,7 +27,7 @@ module SpecTools
     {"actionStatus" => "ok", "content"=> page_body.gsub("\n", "")}
   end
 
-  def result_file token
+  def result_path token
     tmp_dir + token
   end
 
@@ -31,15 +35,24 @@ module SpecTools
     "/tmp/tofu-kozo/#{@kozo_port}/"
   end
 
-  def interpret_result file_path
-    s = File.read file_path
+  # just an alias for better readablitiy in tests
+  def discard_result token
+    interpret_result token
+  end
+
+  def interpret_result token, tries=5
+    if tries < 0
+      raise "Could not get result file for #{token}."
+    end
+
+    s = File.read(result_path token)
     if s.length == 0
       sleep 1
-      return interpret_result file_path
+      return interpret_result(token, tries - 1)
     end
 
     dirty = JSON.parse s
-    
+
     if dirty["content"]
       clean_content = dirty["content"].gsub("\n","")
     else

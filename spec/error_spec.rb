@@ -20,12 +20,12 @@ describe "Tofu-kozo error page: " do
   it "Responds with an error message that the page could not be loaded." do
     url = "http://thisIsSuchALongUrlThatThisHostCannotPossiblyExist.com:9999/nonExistent.html"
     token = `curl -sS http://localhost:#{@kozo_port}/visit?url=#{e url}`
-    (interpret_result (result_file token)).should == (error_msg "Could not open page: #{url}")
+    (interpret_result token).should == (error_msg "Could not open page: #{url}")
   end
 
   it "Responds with an error message if the command is malformed" do
     token = `curl -sS http://localhost:#{@kozo_port}/doStuff?tofu=#{e 'bogus:stuff'}`
-    (interpret_result (result_file token)).should == (error_msg "Could not interpret command: /doStuff?tofu=bogus:stuff")
+    (interpret_result token).should == (error_msg "Could not interpret command: /doStuff?tofu=bogus:stuff")
 
   end
 end

@@ -13,9 +13,19 @@ var page = require('webpage').create();
 var server = require('webserver').create();
 var logfile = "./phantom.log";
 var port = phantom.args[0] || 10530;
+var MAX_TICKS = 7;
 
 page.onConsoleMessage = function(msg, line, id) { 
   log(msg+" (line: "+line+") : "+id); 
+};
+
+page.getContent = function() {
+  // the standard phantom functions gets only the source(?) 
+  page.injectJs("jquery_noConflict.js");
+  var res = page.evaluate(function(){
+    return jQuery("html").html();
+  });
+  return res;
 };
 
 var makeParams = function(jobToken, obj){
@@ -33,20 +43,21 @@ var clickElement = function(jobToken, selector) {
   });
 
   if (res.length !== 0) {
+    var old = page.getContent();
     page.sendEvent("click", res.left, res.top);
-    var waiting = true;
-    var old = page.content;
-    return waitForResult(jobToken, old);
+    return waitForResult(jobToken, old, MAX_TICKS); // start countdown
   } else {
     return writeResult(jobToken, makeResult("error", "Could not find "+sel));
   }
 };
 
-var waitForResult = function(jobToken, oldPageBody) {
-  if (page.content !== oldPageBody) {
-    return writeResult(jobToken, makeResult("ok", page.content));
+var waitForResult = function(jobToken, oldPageBody, ticks) {
+  if (ticks <= 0) {
+    return writeResult(jobToken, makeResult("error", "Timed out for "+jobToken));
+  } else if (page.getContent() !== oldPageBody) {
+    return writeResult(jobToken, makeResult("ok", page.getContent()));
   } else {
-    setTimeout(function(){waitForResult(jobToken, oldPageBody)}, 1000);
+    setTimeout(function(){waitForResult(jobToken, oldPageBody, (ticks-1))}, 500);
   }
 };
 
@@ -55,7 +66,7 @@ var selectElement = function(jobToken, selector) {
   page.injectJs("jquery_noConflict.js");
   page.injectJs(makeParams(jobToken,{selector:sel}));
 
-  var res = page.evaluate(function(){
+  var res = page.evaluate(function() {
     var elems = jQuery(TofuParams.selector);
     if (elems.length > 0){
       return elems[0].outerHTML;
@@ -76,9 +87,35 @@ var visitPage = function(jobToken, url) {
     if (status === "fail") {
       return writeResult(jobToken, makeResult("error","Could not open page: "+url));
     } else if (status === "success") {
-      return writeResult(jobToken, makeResult("ok", page.content));
+      return writeResult(jobToken, makeResult("ok", page.getContent()));
     }
   });
+};
+
+var fillInElement = function(jobToken, target, text) {
+  var sel  = target.replace("+"," ");
+  var t = text.replace("+"," ");  // TODO: remove this mechanism.
+
+
+  page.injectJs("jquery_noConflict.js");
+  page.injectJs(makeParams(jobToken,{selector:sel, text:t}));
+
+  var res = page.evaluate(function() {
+    var elems = jQuery(TofuParams.selector);
+    if (elems.length > 0){
+      elems[0].value = TofuParams.text;
+      return(elems[0].value);
+    } else {
+      return false;
+    }
+  });
+
+  if (typeof res === "string" && res.length !== 0) {
+    return writeResult(jobToken, makeResult("ok", res));
+  } else {
+    return writeResult(jobToken, makeResult("error", "Could not find "+sel));
+  }
+
 };
 
 var unknownCommand = function(jobToken, url) {
@@ -98,6 +135,11 @@ var takeAction = function(jobToken, url) {
   } else if (/^\/click\?sel=(.*)/.test(url)) {
     var target = decodeURIComponent(url.split("=")[1]);
     return clickElement(jobToken, target);
+  } else if (/^\/fill_in\?sel=(.*)&with\=(.*)/.test(url)) {
+    var m = /^\/fill_in\?sel=(.*)&with\=(.*)/.exec(url);
+    var target = decodeURIComponent(m[1]);
+    var text = decodeURIComponent(m[2]);
+    return fillInElement(jobToken, target, text);
   } else {
     return unknownCommand(jobToken, url);
   }
@@ -109,6 +151,7 @@ var startServer = function() {
     // Send the token to the client and the rest is callbacks
     resp.write(jobToken); 
     touchResultFile(jobToken);
+    log(req.url);
     return takeAction(jobToken, req.url);
   });
   if (!listening) {

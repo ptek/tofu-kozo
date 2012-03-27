@@ -1,0 +1,26 @@
+<html><head><script src="/jquery.js"></script></head>
+    <div id="test1">Test me.</div>
+    <form id="test-form" action="javascript:testUpdate()">
+      <input id="input1-id" name="input1-name" type="text"></input><br>
+      <input id="input2-id" type="text"></input><br>
+      <input id="submit-button" type="submit" value="click here"></input>
+    </form>
+    
+    <div id="post-results">
+    </div>
+  <script>
+  function testUpdate(){
+    var nameValue, idValue;
+    nameValue = $("#input1-id").val();
+    idValue = $("#input2-id").val();
+    $("#post-results").html("<br>"+nameValue+"<br>"+idValue);
+  };
+
+
+document.onreadystatechange = function(){
+  console.log(document.readyState);
+};
+
+</script>
+      
+  </body></html>
