@@ -73,7 +73,7 @@ describe "Tofu-kozo action API " do
 
   describe "/fill_in?sel=<selector>&with=<text>" do
     
-    it "finds and clicks by link text" do
+    it "finds inputs by id and fills them out" do
       url = "http://localhost:#{@www_port}/input_test.html"
       sel = '#input2-id'
       button_sel = '#submit-button'

@@ -30,5 +30,5 @@ BSD (See [LICENSE](https://github.com/pzel/tofu-kozo/blob/master/LICENSE))
 
  1. ☑  Get page fragments and return the html.
  2. ☑  Click page elements.
- 3. ☐  Fill out and submit forms.
+ 3. ☑  Fill out and submit forms.
 
