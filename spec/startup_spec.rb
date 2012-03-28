@@ -3,22 +3,20 @@ require './spec/spec_tools.rb'
 include SpecTools
 
 describe "startup" do
-  
+
   before :each do
     @kozo_port = 10531
     @kozo = fork { exec "phantomjs ./src/tofu-kozo.js #{@kozo_port}" }
     Process.detach @kozo
-    sleep 0.7
+    sleep 3
   end
-  
-    after :each do
+
+  after :each do
     Process.kill("KILL", @kozo)
-      sleep 0.5
+      sleep 1
   end
-  
+
   it "Can be launched" do
-      `ps aux | grep [p]hantom| awk '{print $2}'`.should include (@kozo.to_s)
+      `ps aux | grep [p]hantom| awk '{print $2}'`.should include @kozo.to_s
   end
 end
-
-

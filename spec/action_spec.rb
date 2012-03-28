@@ -12,8 +12,8 @@ describe "Tofu-kozo action API " do
     [@kozo, @www_server].each { |pid| Process.detach pid }
     sleep 2
   end
-  
-  after :all do 
+
+  after :all do
     [@kozo, @www_server].each { |pid| Process.kill "KILL", pid }
   end
 
@@ -26,35 +26,35 @@ describe "Tofu-kozo action API " do
   end
 
   describe "[ /select?sel=<CSS selector> ]" do
-    
+
     it "selects by id and returns the HTML" do
       url = "http://localhost:#{@www_port}/selector_test.html"
       sel = "#test1-id"
       discard_result `curl -s http://localhost:#{@kozo_port}/visit?url=#{e url}`
       token = `curl -s http://localhost:#{@kozo_port}/select?sel=#{e sel}`
-      (interpret_result token).should == 
+      (interpret_result token).should ==
         (ok_msg "<div id=\"test1-id\">Test me.</div>")
     end
-    
+
     it "selects by class and returns the first matching element's HTML" do
       url = "http://localhost:#{@www_port}/selector_test.html"
       sel = ".testClass"
       discard_result `curl -s http://localhost:#{@kozo_port}/visit?url=#{e url}`
       token = `curl -s http://localhost:#{@kozo_port}/select?sel=#{e sel}`
-      (interpret_result token).should == 
+      (interpret_result token).should ==
         (ok_msg "<div class=\"testClass\">First!</div>")
     end
-    
+
     it "supports the :eq pseudoselector" do
       url = "http://localhost:#{@www_port}/selector_test.html"
       sel = ".testClass:eq(1)"
       discard_result `curl -s http://localhost:#{@kozo_port}/visit?url=#{e url}`
-      
+
       token = `curl -s http://localhost:#{@kozo_port}/select?sel=#{e sel}`
-      (interpret_result token).should == 
+      (interpret_result token).should ==
         (ok_msg "<div class=\"testClass\">Second!</div>")
     end
-    
+
   end
 
   describe "/click?sel=<selector> by link text" do
@@ -72,7 +72,7 @@ describe "Tofu-kozo action API " do
   end
 
   describe "/fill_in?sel=<selector>&with=<text>" do
-    
+
     it "finds inputs by id and fills them out" do
       url = "http://localhost:#{@www_port}/input_test.html"
       sel = '#input2-id'
@@ -87,8 +87,8 @@ describe "Tofu-kozo action API " do
 
   end
 
-  
-  
+
+
 
 
 end

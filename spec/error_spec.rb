@@ -12,8 +12,8 @@ describe "Tofu-kozo error page: " do
     [@kozo, @www_server].each { |pid| Process.detach pid }
     sleep 2
   end
-  
-  after :all do 
+
+  after :all do
     [@kozo, @www_server].each { |pid| Process.kill "KILL", pid }
   end
 
