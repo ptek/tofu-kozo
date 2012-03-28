@@ -28,6 +28,13 @@ page.getContent = function() {
   return res;
 };
 
+page.notBusy = function() {
+  var res = page.evaluate(function(){
+    return document.readyState === "complete";
+  });
+  return res;
+};
+
 var makeParams = function(jobToken, obj){
   var injection = ("window.TofuParams = {}; window.TofuParams ="+JSON.stringify(obj)+";");
   return writeInjection(jobToken, injection);
@@ -54,7 +61,7 @@ var clickElement = function(jobToken, selector) {
 var waitForResult = function(jobToken, oldPageBody, ticks) {
   if (ticks <= 0) {
     return writeResult(jobToken, makeResult("error", "Timed out for "+jobToken));
-  } else if (page.getContent() !== oldPageBody) {
+  } else if ((page.getContent() !== oldPageBody) && page.notBusy()) {
     return writeResult(jobToken, makeResult("ok", page.getContent()));
   } else {
     setTimeout(function(){waitForResult(jobToken, oldPageBody, (ticks-1))}, 500);
@@ -125,7 +132,9 @@ var unknownCommand = function(jobToken, url) {
 
 var takeAction = function(jobToken, url) {
   if (/^\/quit$/.test(url)) {
-    return setTimeout(phantom.exit, 1);
+    phantom.exit();
+    return writeResult(jobToken, makeResult("ok", "Quitting"));
+
   } else if (/^\/visit\?url=(.*)/.test(url)) {
     var target = decodeURIComponent(url.split("=")[1]);
     return visitPage(jobToken, target);
