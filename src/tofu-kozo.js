@@ -1,5 +1,5 @@
-/* 
- TOFU-KOZO 豆腐小僧 
+/*
+ TOFU-KOZO 豆腐小僧
  An HTTP-based control scheme for phantom.js
  Licensed under the BSD license (see: LICENSE)
  Copyright 2012 pzel
@@ -15,12 +15,12 @@ var logfile = "./phantom.log";
 var port = phantom.args[0] || 10530;
 var MAX_TICKS = 7;
 
-page.onConsoleMessage = function(msg, line, id) { 
-  log(msg+" (line: "+line+") : "+id); 
+page.onConsoleMessage = function(msg, line, id) {
+  log(msg+" (line: "+line+") : "+id);
 };
 
 page.getContent = function() {
-  // the standard phantom functions gets only the source(?) 
+  // the standard phantom functions gets only the source(?)
   page.injectJs("jquery_noConflict.js");
   var res = page.evaluate(function(){
     return jQuery("html").html();
@@ -44,7 +44,7 @@ var clickElement = function(jobToken, selector) {
   var sel = selector.replace(/\+/g," ");
   page.injectJs("jquery_noConflict.js");
   page.injectJs(makeParams(jobToken,{selector:sel}));
-  
+
   var res = page.evaluate(function(){
     return jQuery(TofuParams.selector).offset();
   });
@@ -158,7 +158,9 @@ var startServer = function() {
   var listening = server.listen(port, function(req, resp){
     var jobToken = uuid();
     // Send the token to the client and the rest is callbacks
-    resp.write(jobToken); 
+    resp.statusCode = 200;
+    resp.write(jobToken);
+    resp.close();
     touchResultFile(jobToken);
     log(req.url);
     return takeAction(jobToken, req.url);
@@ -175,7 +177,7 @@ var loadDeps = function() {
 
 var prepareDir = function(port){
   if (fs.isWritable("/tmp")){
-    fs.makeTree(resultDir()); 
+    fs.makeTree(resultDir());
     return true;
   }
   else {
